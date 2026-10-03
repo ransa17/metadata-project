@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Pipeline definitions — three Spark Declarative Pipelines (bronze, silver, gold)
+#
+# KEY GOTCHA: Each downstream pipeline must know the catalog/schema of the
+# stage *before* it so it can read tables across pipeline boundaries.
+# SDP pipelines cannot use dlt.read() for tables created by a *different*
+# pipeline — they must use spark.table("catalog.schema.table").
+# That cross-stage reference is passed via the `configuration` block.
+# ---------------------------------------------------------------------------
+
+resources:
+  pipelines:
+
+    bronze_ingestion:
+      name: openfda_bronze_${bundle.target}
+      channel: CURRENT
+      serverless: true
+      catalog: ${var.bronze_catalog}
+      target: ${var.bronze_schema}
+      libraries:
+        - file:
+            path: ../01_bronze_ingestion.py
+      configuration:
+        bronze.catalog: ${var.bronze_catalog}
+        bronze.schema: ${var.bronze_schema}
+
+    silver_transform:
+      name: openfda_silver_${bundle.target}
+      channel: CURRENT
+      serverless: true
+      catalog: ${var.silver_catalog}
+      target: ${var.silver_schema}
+      libraries:
+        - file:
+            path: ../02_silver_transform.py
+      configuration:
+        bronze.catalog: ${var.bronze_catalog}
+        bronze.schema: ${var.bronze_schema}
+        silver.catalog: ${var.silver_catalog}
+        silver.schema: ${var.silver_schema}
+
+    gold_aggregation:
+      name: openfda_gold_${bundle.target}
+      channel: CURRENT
+      serverless: true
+      catalog: ${var.gold_catalog}
+      target: ${var.gold_schema}
+      libraries:
+        - file:
+            path: ../03_gold_aggregation.py
+      configuration:
+        silver.catalog: ${var.silver_catalog}
+        silver.schema: ${var.silver_schema}
+        gold.catalog: ${var.gold_catalog}
+        gold.schema: ${var.gold_schema}

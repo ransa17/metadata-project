@@ -1,0 +1,131 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — gold_events_by_drug (gold layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: gold_events_by_drug
+  layer: gold
+  description: >
+    Business-ready aggregation of adverse events by suspect drug. For each
+    drug, counts total events, serious events, fatal events, hospitalizations,
+    and life-threatening events. Includes seriousness rate, fatal rate, and
+    hospitalization rate percentages. Patient age statistics included for
+    demographic profiling.
+  grain: one row per drug (drug_name)
+  owner: TODO(pharmacovigilance-team)
+  source_system: Aggregated from events_silver + drugs_silver + reactions_silver
+  ingestion_method: Spark Declarative Pipeline gold_aggregation — groupBy with countDistinct and conditional sums
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: gold
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: gold
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [drug_name]
+  foreign_keys: []
+  quality_rules: []
+
+columns:
+  drug_name:
+    description: Normalized brand name of the suspect drug. 20 distinct drugs in this dataset.
+    unit: null
+    examples: ["Lipitor", "Metformin", "Keytruda"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  generic_name:
+    description: Generic (INN) name of the drug substance.
+    unit: null
+    examples: ["Atorvastatin", "Metformin"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  manufacturer_name:
+    description: Drug manufacturer name.
+    unit: null
+    examples: ["Pfizer", "Merck"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drugindication:
+    description: Medical indication for which the drug was being used.
+    unit: null
+    examples: ["Hypercholesterolemia", "Type 2 Diabetes"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  event_count:
+    description: Total number of adverse event reports for this drug.
+    unit: reports
+    examples: [520, 340]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  serious_count:
+    description: Number of reports classified as serious for this drug.
+    unit: reports
+    examples: [130, 85]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  fatal_count:
+    description: Number of reports with a fatal outcome for this drug.
+    unit: reports
+    examples: [20, 12]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  hospitalized_count:
+    description: Number of reports requiring hospitalization for this drug.
+    unit: reports
+    examples: [60, 40]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  life_threatening_count:
+    description: Number of life-threatening event reports for this drug.
+    unit: reports
+    examples: [25, 15]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  avg_patient_age:
+    description: Average patient age for events involving this drug.
+    unit: years
+    examples: [55.2, 62.8]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  median_patient_age:
+    description: Median patient age for events involving this drug (50th percentile).
+    unit: years
+    examples: [54, 63]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  seriousness_rate_pct:
+    description: Percentage of events classified as serious for this drug. Range 0-100.
+    unit: percent
+    examples: [25.0, 30.5]
+    pii: false
+    semantic_type: measure
+    ai_role: label
+  fatal_rate_pct:
+    description: Percentage of events with a fatal outcome for this drug. Range 0-100.
+    unit: percent
+    examples: [3.8, 4.2]
+    pii: false
+    semantic_type: measure
+    ai_role: label
+  hospitalization_rate_pct:
+    description: Percentage of events requiring hospitalization for this drug. Range 0-100.
+    unit: percent
+    examples: [11.5, 14.0]
+    pii: false
+    semantic_type: measure
+    ai_role: label

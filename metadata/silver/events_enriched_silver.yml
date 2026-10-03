@@ -1,0 +1,102 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — events_enriched_silver (silver layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: events_enriched_silver
+  layer: silver
+  description: >
+    Wide enriched table joining each safety report with its suspect drug
+    (first drug with characterization=1) and primary reaction (first MedDRA
+    term by alphabetical order). Provides a single-row-per-event view for
+    downstream analysis and ML.
+  grain: one row per safety report (safetyreportid)
+  owner: TODO(pharmacovigilance-team)
+  source_system: Derived from events_bronze + drugs_bronze + reactions_bronze via window function joins
+  ingestion_method: Spark Declarative Pipeline silver_transform — cross-pipeline joins with row_number window
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: silver
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: silver
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [safetyreportid]
+  foreign_keys: []
+  quality_rules: []
+
+columns:
+  safetyreportid:
+    description: Unique safety report identifier. Primary key.
+    unit: null
+    examples: ["US-FDA-00000001"]
+    pii: false
+    semantic_type: identifier
+    ai_role: key
+  receive_date:
+    description: Date the report was received by FDA, parsed from YYYYMMDD.
+    unit: null
+    examples: ["2023-01-15"]
+    pii: false
+    semantic_type: timestamp
+    ai_role: feature
+  occurcountry:
+    description: ISO country code where the adverse event occurred.
+    unit: null
+    examples: ["US", "GB"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  serious_label:
+    description: Seriousness label — Serious or Non-Serious.
+    unit: null
+    examples: ["Serious", "Non-Serious"]
+    pii: false
+    semantic_type: dimension
+    ai_role: label
+  patient_age:
+    description: Patient age at time of event, cast to integer.
+    unit: years
+    examples: [45, 72]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  sex_label:
+    description: Human-readable patient sex. Male, Female, or Unknown.
+    unit: null
+    examples: ["Male", "Female"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  medicinalproduct:
+    description: Brand name of the suspect drug (first drug with characterization=1 per report).
+    unit: null
+    examples: ["Lipitor", "Keytruda"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drugindication:
+    description: Medical indication for which the suspect drug was being used.
+    unit: null
+    examples: ["Hypercholesterolemia", "Melanoma"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  primary_reaction:
+    description: Primary (first) MedDRA reaction term for this report.
+    unit: null
+    examples: ["Nausea", "Death"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  primary_outcome:
+    description: Outcome code for the primary reaction. 1=Recovered through 6=Unknown.
+    unit: null
+    examples: ["1", "5"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature

@@ -1,0 +1,107 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — drugs_bronze (bronze layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: drugs_bronze
+  layer: bronze
+  description: >
+    Raw drug records exploded from the patient.drug array in openFDA adverse
+    event reports. One row per drug per safety report. The first drug per
+    report is typically the suspect drug (drugcharacterization=1); subsequent
+    drugs are concomitant (2) or interacting (3).
+  grain: one row per drug per safety report (safetyreportid + medicinalproduct)
+  owner: TODO(pharmacovigilance-team)
+  source_system: openFDA Drug Adverse Events API — patient.drug array exploded
+  ingestion_method: Spark Declarative Pipeline bronze_ingestion — synthetic data matching openFDA schema
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: bronze
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: bronze
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [safetyreportid, medicinalproduct]
+  foreign_keys:
+    - columns: [safetyreportid]
+      ref_layer: bronze
+      ref_table: events_bronze
+      ref_columns: [safetyreportid]
+  quality_rules:
+    - "safetyreportid is not null (SDP expectation)"
+
+columns:
+  safetyreportid:
+    description: Foreign key to events_bronze.safetyreportid — identifies the safety report this drug belongs to.
+    unit: null
+    examples: ["US-FDA-00000001"]
+    pii: false
+    semantic_type: identifier
+    ai_role: key
+  drugcharacterization:
+    description: Role of this drug in the event. 1=Suspect, 2=Concomitant, 3=Interacting. Mapped to characterization label in silver.
+    unit: null
+    examples: ["1", "2"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  medicinalproduct:
+    description: Brand or trade name of the drug as reported. 20 distinct drugs in this dataset including Lipitor, Metformin, Keytruda, etc.
+    unit: null
+    examples: ["Lipitor", "Metformin", "Keytruda"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  generic_name:
+    description: Generic (INN) name of the drug substance from openfda.generic_name field.
+    unit: null
+    examples: ["Atorvastatin", "Metformin", "Pembrolizumab"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drugindication:
+    description: Medical indication for which the drug was being used. 18 distinct indications in this dataset.
+    unit: null
+    examples: ["Hypercholesterolemia", "Type 2 Diabetes", "Melanoma"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drugadministrationroute:
+    description: Route of administration code. 048=Oral, 063=Intravenous, 065=Subcutaneous, 076=Inhalation. Mapped to route_label in silver.
+    unit: null
+    examples: ["048", "065"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drugauthorizationnumb:
+    description: Drug authorization number assigned by the reporting country.
+    unit: null
+    examples: ["LIP123", "MET456"]
+    pii: false
+    semantic_type: identifier
+    ai_role: exclude
+  manufacturer_name:
+    description: Drug manufacturer name from openfda.manufacturer_name field.
+    unit: null
+    examples: ["Pfizer", "Merck", "AbbVie"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  route:
+    description: Human-readable route of administration from openfda.route field. Same info as drugadministrationroute but in text form.
+    unit: null
+    examples: ["Oral", "Subcutaneous", "Intravenous"]
+    pii: false
+    semantic_type: dimension
+    ai_role: exclude
+  substance_name:
+    description: Active substance name from openfda.substance_name field. Often same as generic_name.
+    unit: null
+    examples: ["Atorvastatin", "Metformin"]
+    pii: false
+    semantic_type: dimension
+    ai_role: exclude

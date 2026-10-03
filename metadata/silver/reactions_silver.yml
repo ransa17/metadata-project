@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — reactions_silver (silver layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: reactions_silver
+  layer: silver
+  description: >
+    Cleansed reaction records with outcome codes mapped to human-readable
+    labels and a boolean is_fatal_reaction flag. One row per reaction per
+    safety report.
+  grain: one row per reaction per safety report
+  owner: TODO(pharmacovigilance-team)
+  source_system: Cleansed from reactions_bronze — outcome code-to-label mapping
+  ingestion_method: Spark Declarative Pipeline silver_transform — reads reactions_bronze via cross-pipeline spark.table()
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: silver
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: silver
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [safetyreportid, reactionmeddrapt]
+  foreign_keys:
+    - columns: [safetyreportid]
+      ref_layer: silver
+      ref_table: events_silver
+      ref_columns: [safetyreportid]
+  quality_rules:
+    - "safetyreportid is not null (SDP expectation)"
+
+columns:
+  safetyreportid:
+    description: Foreign key to events_silver.safetyreportid.
+    unit: null
+    examples: ["US-FDA-00000001"]
+    pii: false
+    semantic_type: identifier
+    ai_role: key
+  reactionmeddrapt:
+    description: MedDRA preferred term for the adverse reaction. 44 distinct terms in this dataset.
+    unit: null
+    examples: ["Nausea", "Death", "Cardiac arrest"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  reactionoutcome:
+    description: Raw outcome code from bronze. 1=Recovered, 2=Recovering, 3=Not Recovered, 4=Sequelae, 5=Fatal, 6=Unknown.
+    unit: null
+    examples: ["1", "5"]
+    pii: false
+    semantic_type: dimension
+    ai_role: exclude
+  outcome_label:
+    description: Human-readable outcome. Recovered/Resolved, Recovering/Resolving, Not Recovered/Not Resolved, Recovered with Sequelae, Fatal, or Unknown.
+    unit: null
+    examples: ["Recovered/Resolved", "Fatal"]
+    pii: false
+    semantic_type: dimension
+    ai_role: label
+  is_fatal_reaction:
+    description: Boolean — true if the reaction outcome was fatal (reactionoutcome=5).
+    unit: null
+    examples: [true, false]
+    pii: false
+    semantic_type: measure
+    ai_role: feature

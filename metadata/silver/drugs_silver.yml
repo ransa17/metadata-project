@@ -1,0 +1,99 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — drugs_silver (silver layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: drugs_silver
+  layer: silver
+  description: >
+    Cleansed drug records with characterization mapped to labels (Suspect,
+    Concomitant, Interacting), route codes mapped to text, and drug names
+    normalized via initcap+trim. One row per drug per safety report.
+  grain: one row per drug per safety report
+  owner: TODO(pharmacovigilance-team)
+  source_system: Cleansed from drugs_bronze — code-to-label mapping, name normalization
+  ingestion_method: Spark Declarative Pipeline silver_transform — reads drugs_bronze via cross-pipeline spark.table()
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: silver
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: silver
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [safetyreportid, drug_name]
+  foreign_keys:
+    - columns: [safetyreportid]
+      ref_layer: silver
+      ref_table: events_silver
+      ref_columns: [safetyreportid]
+  quality_rules:
+    - "safetyreportid is not null (SDP expectation)"
+
+columns:
+  safetyreportid:
+    description: Foreign key to events_silver.safetyreportid.
+    unit: null
+    examples: ["US-FDA-00000001"]
+    pii: false
+    semantic_type: identifier
+    ai_role: key
+  characterization:
+    description: Role of this drug in the event. Suspect (primary cause), Concomitant (background), or Interacting.
+    unit: null
+    examples: ["Suspect", "Concomitant"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drug_name:
+    description: Normalized brand/trade name of the drug (initcap+trim applied).
+    unit: null
+    examples: ["Lipitor", "Metformin", "Keytruda"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  generic_name:
+    description: Generic (INN) name of the drug substance.
+    unit: null
+    examples: ["Atorvastatin", "Metformin"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drugindication:
+    description: Medical indication for which the drug was being used.
+    unit: null
+    examples: ["Hypercholesterolemia", "Type 2 Diabetes"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  route_label:
+    description: Human-readable route of administration. Oral, Intravenous, Subcutaneous, Inhalation, or Unknown.
+    unit: null
+    examples: ["Oral", "Subcutaneous"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  drugauthorizationnumb:
+    description: Drug authorization number.
+    unit: null
+    examples: ["LIP123"]
+    pii: false
+    semantic_type: identifier
+    ai_role: exclude
+  manufacturer_name:
+    description: Drug manufacturer name.
+    unit: null
+    examples: ["Pfizer", "Merck", "AbbVie"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  substance_name:
+    description: Active substance name. Often same as generic_name.
+    unit: null
+    examples: ["Atorvastatin"]
+    pii: false
+    semantic_type: dimension
+    ai_role: exclude

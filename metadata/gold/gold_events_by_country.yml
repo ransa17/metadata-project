@@ -1,0 +1,88 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — gold_events_by_country (gold layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: gold_events_by_country
+  layer: gold
+  description: >
+    Adverse events aggregated by occurrence country. For each country:
+    total event count, serious count, fatal count, average patient age,
+    and the most frequently reported drug. Sorted by event count descending.
+    US dominates with ~30% of all reports.
+  grain: one row per country (occurcountry)
+  owner: TODO(pharmacovigilance-team)
+  source_system: Aggregated from events_silver + drugs_silver
+  ingestion_method: Spark Declarative Pipeline gold_aggregation — groupBy with window for top drug
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: gold
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: gold
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [occurcountry]
+  foreign_keys: []
+  quality_rules: []
+
+columns:
+  occurcountry:
+    description: ISO country code where the adverse event occurred. 20 countries in this dataset.
+    unit: null
+    examples: ["US", "GB", "DE"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  event_count:
+    description: Total number of adverse event reports from this country.
+    unit: reports
+    examples: [3000, 1000]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  serious_count:
+    description: Number of serious reports from this country.
+    unit: reports
+    examples: [750, 250]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  fatal_count:
+    description: Number of fatal reports from this country.
+    unit: reports
+    examples: [110, 40]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  avg_patient_age:
+    description: Average patient age for events from this country.
+    unit: years
+    examples: [55.5, 60.2]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  top_drug:
+    description: Most frequently reported suspect drug in this country.
+    unit: null
+    examples: ["Lipitor", "Metformin"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  top_drug_count:
+    description: Event count for the top drug in this country.
+    unit: reports
+    examples: [150, 80]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  seriousness_rate_pct:
+    description: Percentage of events classified as serious in this country.
+    unit: percent
+    examples: [25.0, 28.5]
+    pii: false
+    semantic_type: measure
+    ai_role: label

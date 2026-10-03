@@ -1,0 +1,168 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — events_bronze (bronze layer)
+# Single source of truth for this table's business meaning.
+# Applied to Unity Catalog by src/metadata/apply_metadata.py.
+# ---------------------------------------------------------------------------
+
+table:
+  name: events_bronze
+  layer: bronze
+  description: >
+    Raw landing zone for drug adverse event report metadata. One row per
+    safety report as received from the openFDA drug adverse events API.
+    No cleansing or typing applied — dates are raw YYYYMMDD strings and
+    codes (serious, patientsex, etc.) are preserved as-is from the source.
+  grain: one row per safety report (safetyreportid)
+  owner: TODO(pharmacovigilance-team) — replace with the owning team
+  source_system: openFDA Drug Adverse Events API (api.fda.gov/drug/event.json) via Apify actor scrupulous_waterbird_m4w/openfda-drug-events
+  ingestion_method: Spark Declarative Pipeline bronze_ingestion — synthetic data matching openFDA API schema (10,000 reports)
+  refresh_frequency: on every pipeline run (no fixed schedule)
+  tags:
+    layer: bronze
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: bronze
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [safetyreportid]
+  foreign_keys: []
+  quality_rules:
+    - "safetyreportid is not null (SDP expectation)"
+
+columns:
+  safetyreportid:
+    description: Unique safety report identifier from openFDA, format US-FDA-XXXXXXXX (8-digit sequential).
+    unit: null
+    examples: ["US-FDA-00000001", "US-FDA-00010000"]
+    pii: false
+    semantic_type: identifier
+    ai_role: key
+  receivedate:
+    description: Date the report was received by FDA, raw YYYYMMDD string. Cast to DATE in silver as receive_date.
+    unit: null
+    examples: ["20230115", "20240620"]
+    pii: false
+    semantic_type: timestamp
+    ai_role: feature
+  receiptdate:
+    description: Date of receipt acknowledgment, raw YYYYMMDD string.
+    unit: null
+    examples: ["20230120", "20240701"]
+    pii: false
+    semantic_type: timestamp
+    ai_role: feature
+  transmissiondate:
+    description: Date the report was transmitted, raw YYYYMMDD string.
+    unit: null
+    examples: ["20230116", "20240622"]
+    pii: false
+    semantic_type: timestamp
+    ai_role: feature
+  occurcountry:
+    description: ISO country code where the adverse event occurred. 20 countries represented — US dominates at ~30% of reports.
+    unit: null
+    examples: ["US", "GB", "DE", "JP"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  primarysourcequalification:
+    description: Code for the type of reporter. 1=Physician, 2=Pharmacist, 3=Other Health Professional, 4=Lawyer, 5=Consumer.
+    unit: null
+    examples: ["1", "5"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  reportercountry:
+    description: ISO country code of the reporter (often same as occurcountry).
+    unit: null
+    examples: ["US", "GB"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  reporttype:
+    description: Type of report. 1=Spontaneous, 2=Report from study, 3=Other.
+    unit: null
+    examples: ["1", "3"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  serious:
+    description: Seriousness flag. 1=Serious, 2=Non-Serious. Approximately 25% of reports are serious.
+    unit: null
+    examples: ["1", "2"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  seriousnessdeath:
+    description: Flag indicating the adverse event resulted in death. 1=death, empty=not applicable.
+    unit: null
+    examples: ["1", ""]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  seriousnesslifethreatening:
+    description: Flag indicating a life-threatening event. 1=yes, empty=no.
+    unit: null
+    examples: ["1", ""]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  seriousnesshospitalization:
+    description: Flag indicating hospitalization was required. 1=yes, empty=no.
+    unit: null
+    examples: ["1", ""]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  seriousnessdisabling:
+    description: Flag indicating a disabling event. 1=yes, empty=no.
+    unit: null
+    examples: ["1", ""]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  seriousnesscongenitalanomali:
+    description: Flag indicating a congenital anomaly. 1=yes, empty=no.
+    unit: null
+    examples: ["1", ""]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  seriousnessother:
+    description: Flag for other medically important serious event. 1=yes, empty=no.
+    unit: null
+    examples: ["1", ""]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  patientonsetage:
+    description: Patient age at time of event onset, as string. Range 1-95. Cast to int in silver as patient_age.
+    unit: years
+    examples: ["45", "72"]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  patientonsetageunit:
+    description: Unit for patientonsetage. 1=Year, 2=Month, 3=Week, 4=Day, 5=Hour. Always 1 (year) in this dataset.
+    unit: null
+    examples: ["1"]
+    pii: false
+    semantic_type: dimension
+    ai_role: exclude
+  patientsex:
+    description: Patient sex code. 1=Male, 2=Female, 0=Unknown. Mapped to sex_label in silver.
+    unit: null
+    examples: ["1", "2"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  patientweight:
+    description: Patient weight in kilograms, as string. May be empty for ~15% of reports. Cast to double in silver.
+    unit: kg
+    examples: ["70.5", "85.0", ""]
+    pii: false
+    semantic_type: measure
+    ai_role: feature

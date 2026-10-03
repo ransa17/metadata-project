@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — gold_temporal_trends (gold layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: gold_temporal_trends
+  layer: gold
+  description: >
+    Monthly temporal trends in adverse event reporting. For each month:
+    total event count, serious count, fatal count, and seriousness rate
+    percentage. Sorted chronologically. Covers approximately 36 months
+    (2022-01 through 2024-12) of reporting data.
+  grain: one row per month (yyyy-MM)
+  owner: TODO(pharmacovigilance-team)
+  source_system: Aggregated from events_silver — monthly grouping
+  ingestion_method: Spark Declarative Pipeline gold_aggregation — date_format groupBy
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: gold
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: gold
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [month]
+  foreign_keys: []
+  quality_rules: []
+
+columns:
+  month:
+    description: Calendar month in yyyy-MM format. Covers 2022-01 through 2024-12.
+    unit: null
+    examples: ["2023-01", "2024-06"]
+    pii: false
+    semantic_type: timestamp
+    ai_role: key
+  event_count:
+    description: Total number of adverse event reports received in this month.
+    unit: reports
+    examples: [280, 320]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  serious_count:
+    description: Number of serious reports received in this month.
+    unit: reports
+    examples: [70, 80]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  fatal_count:
+    description: Number of fatal reports received in this month.
+    unit: reports
+    examples: [10, 12]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  seriousness_rate_pct:
+    description: Percentage of events classified as serious in this month.
+    unit: percent
+    examples: [25.0, 27.5]
+    pii: false
+    semantic_type: measure
+    ai_role: label

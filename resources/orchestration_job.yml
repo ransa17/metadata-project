@@ -1,0 +1,136 @@
+# ---------------------------------------------------------------------------
+# Orchestration Job — runs bronze -> silver -> gold -> notify
+#
+# Task dependency chain:
+#   bronze_task -> apply_metadata_bronze -> silver_task -> apply_metadata_silver
+#   -> gold_task -> apply_metadata_gold -> validate_metadata -> export_metadata
+#   -> notify
+#
+# The notify task uses run_if: ALL_DONE so it fires regardless of whether
+# upstream tasks succeeded or failed.
+# ---------------------------------------------------------------------------
+
+resources:
+  jobs:
+    openfda_orchestration:
+      name: openfda_orchestration_${bundle.target}
+
+      tasks:
+        - task_key: bronze_task
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.bronze_ingestion.id}
+
+        - task_key: apply_metadata_bronze
+          depends_on:
+            - task_key: bronze_task
+          spark_python_task:
+            source: WORKSPACE
+            python_file: ../src/metadata/apply_metadata.py
+            parameters:
+              - --layer
+              - bronze
+              - --catalog
+              - ${var.bronze_catalog}
+              - --schema
+              - ${var.bronze_schema}
+              - --metadata-root
+              - ${workspace.file_path}/metadata
+              - --layer-schemas
+              - bronze=${var.bronze_catalog}.${var.bronze_schema},silver=${var.silver_catalog}.${var.silver_schema},gold=${var.gold_catalog}.${var.gold_schema}
+
+        - task_key: silver_task
+          depends_on:
+            - task_key: apply_metadata_bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.silver_transform.id}
+
+        - task_key: apply_metadata_silver
+          depends_on:
+            - task_key: silver_task
+          spark_python_task:
+            source: WORKSPACE
+            python_file: ../src/metadata/apply_metadata.py
+            parameters:
+              - --layer
+              - silver
+              - --catalog
+              - ${var.silver_catalog}
+              - --schema
+              - ${var.silver_schema}
+              - --metadata-root
+              - ${workspace.file_path}/metadata
+              - --layer-schemas
+              - bronze=${var.bronze_catalog}.${var.bronze_schema},silver=${var.silver_catalog}.${var.silver_schema},gold=${var.gold_catalog}.${var.gold_schema}
+
+        - task_key: gold_task
+          depends_on:
+            - task_key: apply_metadata_silver
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.gold_aggregation.id}
+
+        - task_key: apply_metadata_gold
+          depends_on:
+            - task_key: gold_task
+          spark_python_task:
+            source: WORKSPACE
+            python_file: ../src/metadata/apply_metadata.py
+            parameters:
+              - --layer
+              - gold
+              - --catalog
+              - ${var.gold_catalog}
+              - --schema
+              - ${var.gold_schema}
+              - --metadata-root
+              - ${workspace.file_path}/metadata
+              - --layer-schemas
+              - bronze=${var.bronze_catalog}.${var.bronze_schema},silver=${var.silver_catalog}.${var.silver_schema},gold=${var.gold_catalog}.${var.gold_schema}
+
+        - task_key: validate_metadata
+          depends_on:
+            - task_key: apply_metadata_gold
+          spark_python_task:
+            source: WORKSPACE
+            python_file: ../src/metadata/validate_metadata.py
+            parameters:
+              - --metadata-root
+              - ${workspace.file_path}/metadata
+              - --layer-schemas
+              - bronze=${var.bronze_catalog}.${var.bronze_schema},silver=${var.silver_catalog}.${var.silver_schema},gold=${var.gold_catalog}.${var.gold_schema}
+              - --min-coverage
+              - "100"
+
+        - task_key: export_metadata
+          depends_on:
+            - task_key: validate_metadata
+          spark_python_task:
+            source: WORKSPACE
+            python_file: ../src/metadata/export_metadata.py
+            parameters:
+              - --metadata-root
+              - ${workspace.file_path}/metadata
+              - --layer-schemas
+              - bronze=${var.bronze_catalog}.${var.bronze_schema},silver=${var.silver_catalog}.${var.silver_schema},gold=${var.gold_catalog}.${var.gold_schema}
+              - --volume
+              - /Volumes/${var.metadata_catalog}/${var.metadata_schema}/${var.metadata_volume}
+              - --bundle-target
+              - ${bundle.target}
+
+        - task_key: notify
+          depends_on:
+            - task_key: export_metadata
+          run_if: ALL_DONE
+          notebook_task:
+            notebook_path: ../notify_pipeline_status_notebook.py
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+
+      queue:
+        enabled: true
+
+      permissions:
+        - group_name: users
+          level: CAN_VIEW

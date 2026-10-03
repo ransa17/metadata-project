@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — gold_seriousness_analysis (gold layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: gold_seriousness_analysis
+  layer: gold
+  description: >
+    Seriousness breakdown by seriousness category, patient sex, and age group.
+    For each combination: event count, fatal count, average age, and average
+    weight. Enables demographic safety profiling — identifying which patient
+    populations are most affected by serious adverse events.
+  grain: one row per seriousness_category + sex_label + age_group combination
+  owner: TODO(pharmacovigilance-team)
+  source_system: Aggregated from events_silver with derived age_group buckets
+  ingestion_method: Spark Declarative Pipeline gold_aggregation — groupBy with age bucketing
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: gold
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: gold
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [seriousness_category, sex_label, age_group]
+  foreign_keys: []
+  quality_rules: []
+
+columns:
+  seriousness_category:
+    description: Primary seriousness category. Death, Life-Threatening, Hospitalization, Disabling, Congenital Anomaly, Other Serious, or Non-Serious.
+    unit: null
+    examples: ["Hospitalization", "Death", "Non-Serious"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  sex_label:
+    description: Patient sex label. Male, Female, or Unknown.
+    unit: null
+    examples: ["Male", "Female"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  age_group:
+    description: Patient age group bucket. Pediatric (0-17), Adult (18-39), Middle-aged (40-59), Senior (60-79), Elderly (80+).
+    unit: null
+    examples: ["Adult (18-39)", "Senior (60-79)"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  event_count:
+    description: Number of adverse event reports in this demographic/seriousness segment.
+    unit: reports
+    examples: [150, 320]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  fatal_count:
+    description: Number of fatal reports in this segment.
+    unit: reports
+    examples: [5, 15]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  avg_age:
+    description: Average patient age in this segment.
+    unit: years
+    examples: [45.2, 68.5]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  avg_weight_kg:
+    description: Average patient weight in kilograms in this segment.
+    unit: kg
+    examples: [72.5, 68.0]
+    pii: false
+    semantic_type: measure
+    ai_role: feature

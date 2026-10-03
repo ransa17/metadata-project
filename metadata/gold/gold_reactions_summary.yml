@@ -1,0 +1,96 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — gold_reactions_summary (gold layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: gold_reactions_summary
+  layer: gold
+  description: >
+    Aggregated reaction frequency with outcome distribution. For each MedDRA
+    preferred term: total occurrences, fatal count, recovered count, not
+    recovered count, recovering count, unknown count, fatal rate, and
+    recovery rate. Sorted by occurrence count descending for identification
+    of most common adverse reactions.
+  grain: one row per MedDRA reaction term (reactionmeddrapt)
+  owner: TODO(pharmacovigilance-team)
+  source_system: Aggregated from reactions_silver
+  ingestion_method: Spark Declarative Pipeline gold_aggregation — groupBy with conditional sums
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: gold
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: gold
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [reactionmeddrapt]
+  foreign_keys: []
+  quality_rules: []
+
+columns:
+  reactionmeddrapt:
+    description: MedDRA preferred term for the adverse reaction. 44 distinct terms in this dataset.
+    unit: null
+    examples: ["Nausea", "Death", "Headache"]
+    pii: false
+    semantic_type: dimension
+    ai_role: key
+  occurrence_count:
+    description: Total number of times this reaction was reported across all safety reports.
+    unit: occurrences
+    examples: [3500, 1200]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  fatal_count:
+    description: Number of times this reaction had a fatal outcome.
+    unit: occurrences
+    examples: [100, 45]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  recovered_count:
+    description: Number of times this reaction was recovered/resolved.
+    unit: occurrences
+    examples: [800, 300]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  not_recovered_count:
+    description: Number of times this reaction was not recovered/not resolved.
+    unit: occurrences
+    examples: [500, 200]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  recovering_count:
+    description: Number of times this reaction was recovering/resolving.
+    unit: occurrences
+    examples: [400, 150]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  unknown_count:
+    description: Number of times the outcome of this reaction was unknown.
+    unit: occurrences
+    examples: [600, 250]
+    pii: false
+    semantic_type: measure
+    ai_role: feature
+  fatal_rate_pct:
+    description: Percentage of this reaction with a fatal outcome.
+    unit: percent
+    examples: [2.9, 3.8]
+    pii: false
+    semantic_type: measure
+    ai_role: label
+  recovery_rate_pct:
+    description: Percentage of this reaction with a recovery outcome (recovered + recovering).
+    unit: percent
+    examples: [34.3, 28.5]
+    pii: false
+    semantic_type: measure
+    ai_role: label

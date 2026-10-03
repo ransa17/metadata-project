@@ -1,0 +1,57 @@
+# ---------------------------------------------------------------------------
+# AI-ready metadata — reactions_bronze (bronze layer)
+# ---------------------------------------------------------------------------
+
+table:
+  name: reactions_bronze
+  layer: bronze
+  description: >
+    Raw reaction records exploded from the patient.reaction array in openFDA
+    adverse event reports. One row per reaction per safety report. Each
+    reaction is a MedDRA preferred term with an outcome code.
+  grain: one row per reaction per safety report (safetyreportid + reactionmeddrapt)
+  owner: TODO(pharmacovigilance-team)
+  source_system: openFDA Drug Adverse Events API — patient.reaction array exploded
+  ingestion_method: Spark Declarative Pipeline bronze_ingestion — synthetic data matching openFDA schema
+  refresh_frequency: on every pipeline run
+  tags:
+    layer: bronze
+    source_system: openfda
+    owner: TODO(pharmacovigilance-team)
+    refresh_frequency: per_run
+    pii_contains: "false"
+  properties:
+    medallion.layer: bronze
+    medallion.source: openfda
+    medallion.metadata_version: "1.0"
+  primary_key: [safetyreportid, reactionmeddrapt]
+  foreign_keys:
+    - columns: [safetyreportid]
+      ref_layer: bronze
+      ref_table: events_bronze
+      ref_columns: [safetyreportid]
+  quality_rules:
+    - "safetyreportid is not null (SDP expectation)"
+
+columns:
+  safetyreportid:
+    description: Foreign key to events_bronze.safetyreportid — identifies the safety report this reaction belongs to.
+    unit: null
+    examples: ["US-FDA-00000001"]
+    pii: false
+    semantic_type: identifier
+    ai_role: key
+  reactionmeddrapt:
+    description: MedDRA preferred term for the adverse reaction. 44 distinct terms in this dataset including Nausea, Death, Cardiac arrest, etc.
+    unit: null
+    examples: ["Nausea", "Headache", "Death", "Cardiac arrest"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature
+  reactionoutcome:
+    description: Outcome of the reaction. 1=Recovered/Resolved, 2=Recovering/Resolving, 3=Not Recovered, 4=Recovered with Sequelae, 5=Fatal, 6=Unknown. Mapped to outcome_label in silver.
+    unit: null
+    examples: ["1", "5", "6"]
+    pii: false
+    semantic_type: dimension
+    ai_role: feature

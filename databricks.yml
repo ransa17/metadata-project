@@ -1,0 +1,84 @@
+# ---------------------------------------------------------------------------
+# Declarative Automation Bundle (DAB) — openFDA Drug Events Pipeline
+# Root configuration file. Defines variables, includes, and targets.
+#
+# Architecture: Bronze (3 raw tables from openFDA drug adverse events) →
+#   Silver (4 cleansed/enriched tables) → Gold (5 business aggregations)
+# Metadata layer: per-table YAML descriptions applied to UC + exported.
+#
+#   bundle validate -t dev
+#   bundle deploy  -t dev
+#   bundle run openfda_orchestration -t dev
+# ---------------------------------------------------------------------------
+
+bundle:
+  name: openfda_orchestration
+
+variables:
+  bronze_catalog:
+    description: Unity Catalog for the bronze layer
+    default: workspace
+  bronze_schema:
+    description: UC schema for bronze tables
+    default: openfda_bronze
+  silver_catalog:
+    description: Unity Catalog for the silver layer
+    default: workspace
+  silver_schema:
+    description: UC schema for silver tables
+    default: openfda_silver
+  gold_catalog:
+    description: Unity Catalog for the gold layer
+    default: workspace
+  gold_schema:
+    description: UC schema for gold tables
+    default: openfda_gold
+  warehouse_id:
+    description: SQL warehouse ID for dashboard query execution
+    default: c9aabcbe5dea7c13
+  metadata_catalog:
+    description: Unity Catalog holding the metadata export volume
+    default: workspace
+  metadata_schema:
+    description: UC schema for the metadata export volume
+    default: openfda_metadata
+  metadata_volume:
+    description: UC volume name for exported JSON data dictionary and contracts
+    default: metadata_exports
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-49f7f0bb-a44c.cloud.databricks.com
+    variables:
+      bronze_schema: openfda_bronze_dev
+      silver_schema: openfda_silver_dev
+      gold_schema: openfda_gold_dev
+      metadata_schema: openfda_metadata_dev
+
+  stage:
+    mode: production
+    workspace:
+      host: https://dbc-49f7f0bb-a44c.cloud.databricks.com
+      root_path: /Workspace/Users/shambhu.rana@invotechservices.com/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      bronze_schema: openfda_bronze_stage
+      silver_schema: openfda_silver_stage
+      gold_schema: openfda_gold_stage
+      metadata_schema: openfda_metadata_stage
+
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-49f7f0bb-a44c.cloud.databricks.com
+      root_path: /Workspace/Users/shambhu.rana@invotechservices.com/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      bronze_schema: openfda_bronze
+      silver_schema: openfda_silver
+      gold_schema: openfda_gold
+      metadata_schema: openfda_metadata
